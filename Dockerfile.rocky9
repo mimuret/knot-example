@@ -1,0 +1,41 @@
+FROM rockylinux:9 AS stage1
+ARG VERSION=${VERSION:-3.5.4}
+
+WORKDIR /src/knot
+RUN dnf install -y epel-release && \
+/usr/bin/crb enable && \
+dnf install -y --setopt=install_weak_deps=False \
+    gcc make libedit-devel gnutls-devel protobuf-c-devel fstrm-devel userspace-rcu-devel lmdb-devel \
+    wget patch tar xz && \
+dnf clean all && \
+wget https://secure.nic.cz/files/knot-dns/knot-${VERSION}.tar.xz && \
+tar -Jxf knot-${VERSION}.tar.xz && \
+cd knot-${VERSION} && \
+./configure \
+--sysconfdir=/etc \
+--with-rundir=/var/run \
+--with-storage=/var/run \
+--enable-dnstap \
+--with-module-dnsproxy=no \
+--with-module-dnstap=yes \
+--with-module-geoip=no \
+--with-module-noudp=no \
+--with-module-onlinesign=no \
+--with-module-queryacl=yes \
+--with-module-rrl=yes \
+--with-module-stats=yes \
+--with-module-synthrecord=no \
+--with-module-whoami=no && \
+make && \
+make install && \
+ldconfig
+
+RUN groupadd -r knot \
+&& useradd -r -g knot knot \
+&& mkdir -p /var/run/knot \
+&& chown knot:knot /var/run/knot \
+&& ln -sf /dev/stdout /var/log/knot.log
+
+COPY knot.conf /etc/knot/knot.conf
+
+CMD [ "/usr/local/sbin/knotd" ]

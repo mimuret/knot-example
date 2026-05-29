@@ -1,0 +1,40 @@
+FROM debian:12 AS stage1
+ARG VERSION=${VERSION:-3.5.4}
+
+WORKDIR /src/knot
+RUN apt-get update && \
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    gcc make pkg-config protobuf-c-compiler libedit-dev libgnutls28-dev libprotobuf-c-dev libfstrm-dev liburcu-dev liblmdb-dev \
+    wget patch xz-utils ca-certificates && \
+rm -rf /var/lib/apt/lists/* && \
+wget https://secure.nic.cz/files/knot-dns/knot-${VERSION}.tar.xz && \
+tar -Jxf knot-${VERSION}.tar.xz && \
+cd knot-${VERSION} && \
+./configure \
+--sysconfdir=/etc \
+--with-rundir=/var/run \
+--with-storage=/var/run \
+--enable-dnstap \
+--with-module-dnsproxy=no \
+--with-module-dnstap=yes \
+--with-module-geoip=no \
+--with-module-noudp=no \
+--with-module-onlinesign=no \
+--with-module-queryacl=yes \
+--with-module-rrl=yes \
+--with-module-stats=yes \
+--with-module-synthrecord=no \
+--with-module-whoami=no && \
+make && \
+make install && \
+ldconfig
+
+RUN groupadd -r knot \
+&& useradd -r -g knot knot \
+&& mkdir -p /var/run/knot \
+&& chown knot:knot /var/run/knot \
+&& ln -sf /dev/stdout /var/log/knot.log
+
+COPY knot.conf /etc/knot/knot.conf
+
+CMD [ "/usr/local/sbin/knotd" ]
