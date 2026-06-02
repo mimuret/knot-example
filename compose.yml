@@ -1,0 +1,25 @@
+services:
+  alpine24:
+    build:
+      context: .
+      dockerfile: Dockerfile.alpine24
+    volumes:
+      - ./knot.conf:/etc/knot/knot.conf
+  alpine16:
+    build:
+      context: .
+      dockerfile: Dockerfile.alpine16
+    volumes:
+      - ./knot.conf:/etc/knot/knot.conf
+  debian12:
+    build:
+      context: .
+      dockerfile: Dockerfile.debian12
+    volumes:
+      - ./knot.conf:/etc/knot/knot.conf
+  rocky9:
+    build:
+      context: .
+      dockerfile: Dockerfile.rocky9
+    volumes:
+      - ./knot.conf:/etc/knot/knot.conf
